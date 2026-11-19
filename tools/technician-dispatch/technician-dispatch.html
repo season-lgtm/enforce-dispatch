@@ -93,6 +93,7 @@ header h1{font-size:19px;font-weight:700}header p{opacity:.9;font-size:12.5px;ma
 .refval:hover,.noteval:hover{background:#f1f5f9}
 .refval:focus,.noteval:focus{outline:none;border-bottom:2px solid #4f46e5;background:#fff}
 .refval:empty:before,.noteval:empty:before{content:attr(data-ph);color:#9aa3b2;font-style:italic}
+.tmem{font-size:11px;color:#64748b;margin:1px 0 6px;padding-left:2px}
 .psub{font-size:12px;font-weight:700;color:#4f46e5;text-transform:uppercase;letter-spacing:.05em;margin:16px 0 8px;padding-bottom:4px;border-bottom:1px solid #eef2f7}
 .fgnote{font-weight:400;color:#94a3b8;font-size:11px}
 .mvh{font-size:12px;color:#475569;padding:5px 9px;background:#f8fafc;border-left:3px solid #f59e0b;border-radius:5px;margin-top:5px}
@@ -151,7 +152,7 @@ details.matrix summary{font-size:14px;color:#3730a3;cursor:pointer;font-weight:6
   const SB_URL="https://pwhpybintubqinxubhwy.supabase.co";
   const SB_PUB="sb_publishable_WJNB1bTW0CWiQEEcWGzKGA_hA0N0RvN";
   window.__sb=window.supabase.createClient(SB_URL,SB_PUB);
-  const OK=['amc_v2','amc_custom','amc_edits','amc_sales','amc_scontact','amc_semail','amc_files'];
+  const OK=['amc_v2','amc_custom','amc_edits','amc_sales','amc_scontact','amc_semail','amc_files','amc_team'];
   const _t={};
   window.cloudPut=function(key,obj){ if(!window.__authed)return; clearTimeout(_t[key]); _t[key]=setTimeout(function(){
     try{ window.__sb.from('app_state').upsert({key:key,value:obj,updated_at:new Date().toISOString()}).then(function(r){ if(r.error)console.warn('cloud save '+key,r.error.message); }); }catch(e){console.warn(e);} },700); };
@@ -168,7 +169,7 @@ details.matrix summary{font-size:14px;color:#3730a3;cursor:pointer;font-weight:6
     function fill(o,v){Object.keys(o).forEach(function(k){delete o[k];}); if(v)Object.assign(o,v);}
     fill(store,map['amc_v2']||{}); fill(edits,map['amc_edits']||{}); fill(SCONTACT,map['amc_scontact']||{}); fill(SEMAIL,map['amc_semail']||{}); fill(files,map['amc_files']||{});
     custom.length=0; (map['amc_custom']||[]).forEach(function(x){custom.push(x);});
-    if(map['amc_sales'])SALES=map['amc_sales'];
+    if(map['amc_sales'])SALES=map['amc_sales'];if(typeof TEAMMEMBERS!=='undefined'&&map['amc_team'])TEAMMEMBERS=map['amc_team'];
     OK.forEach(function(k){ if(map[k]!==undefined){ try{localStorage.setItem(k,JSON.stringify(map[k]));}catch(e){} } });
     window.__authed=true;
     var lo=document.getElementById('logoutBtn'); if(lo)lo.style.display='';
@@ -258,6 +259,15 @@ details.matrix summary{font-size:14px;color:#3730a3;cursor:pointer;font-weight:6
     <div class="mact"><button class="mbtn sec" onclick="closeVisits()">Cancel</button><button class="mbtn pri" onclick="saveVisits()">Save schedule</button></div>
   </div>
 </div>
+<div class="modal" id="teamModal">
+  <div class="mcard">
+    <h3>Manage team members</h3>
+    <div class="msub">Add technicians and assign each to Team 1 / 2 / 3. They show under each team in Performance.</div>
+    <div id="teamList"></div>
+    <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap"><input id="tm_name" placeholder="Member name" style="flex:1;min-width:110px;padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px"><input id="tm_phone" placeholder="Phone" style="width:120px;padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px"><select id="tm_team" style="padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px"><option>Team 1</option><option>Team 2</option><option>Team 3</option></select><button class="mbtn pri" onclick="addTeamMember()">Add</button></div>
+    <div class="mact"><button class="mbtn sec" onclick="document.getElementById('teamModal').style.display='none'">Close</button></div>
+  </div>
+</div>
 <div class="modal" id="salesModal">
   <div class="mcard">
     <h3>Manage sales names</h3>
@@ -302,7 +312,9 @@ function setRef(id,val){var b=itemById(id);if(!b)return;var k=ckey(b);edits[k]=O
 function setNote(id,val){var b=itemById(id);if(!b)return;var k=ckey(b);edits[k]=Object.assign({},edits[k],{notes:(val||'').trim()});saveEdits();}
 function setParts(id,val){var b=itemById(id);if(!b)return;var k=ckey(b);edits[k]=Object.assign({},edits[k],{parts:(val||'').trim()});saveEdits();}
 function teamOpts(cur){return '<option value="">Team…</option>'+TEAMS.map(t=>`<option value="${t}" ${cur===t?'selected':''}>${t}</option>`).join('');}
-let SALES=JSON.parse(localStorage.getItem('amc_sales')||'["Jessica","Alex","Chiew Ling"]');
+let SALES=JSON.parse(localStorage.getItem('amc_sales')||'["Jessica","Alex","Chiew Ling"]')
+let TEAMMEMBERS=JSON.parse(localStorage.getItem('amc_team')||'[]');
+function saveTeam(){localStorage.setItem('amc_team',JSON.stringify(TEAMMEMBERS));if(window.cloudPut)cloudPut('amc_team',TEAMMEMBERS);};
 function saveSales(){pushUndo('amc_sales');localStorage.setItem('amc_sales',JSON.stringify(SALES));cloudPut&&cloudPut('amc_sales',SALES);}
 const SCONTACT=JSON.parse(localStorage.getItem('amc_scontact')||'{}');
 function saveSC(){pushUndo('amc_scontact');localStorage.setItem('amc_scontact',JSON.stringify(SCONTACT));cloudPut&&cloudPut('amc_scontact',SCONTACT);}
@@ -311,6 +323,11 @@ function saveSE(){pushUndo('amc_semail');localStorage.setItem('amc_semail',JSON.
 function salesOf(id){return (store[id]&&store[id].sales)||'';}
 function setSales(id,val){if(val==='__mgr'){openSalesMgr();render();return;}store[id]=store[id]||{};store[id].sales=val;save();if(curTab==='teams')renderTeams();}
 function openSalesMgr(){renderSalesList();document.getElementById('salesModal').style.display='flex';}
+function openTeamMgr(){renderTeamList();document.getElementById('teamModal').style.display='flex';}
+function renderTeamList(){var el=document.getElementById('teamList');if(!el)return;el.innerHTML=TEAMMEMBERS.length?TEAMMEMBERS.map(function(m,i){return `<div class="slrow"><input class="sci" style="flex:1" value="${esc(m.name)}" placeholder="name" onchange="setTMField(${i},'name',this.value)"><input class="sci" value="${esc(m.phone||'')}" placeholder="phone" onchange="setTMField(${i},'phone',this.value)"><select class="sci" style="width:92px" onchange="setTMField(${i},'team',this.value)">${['Team 1','Team 2','Team 3'].map(function(t){return `<option ${m.team===t?'selected':''}>${t}</option>`;}).join('')}</select><button class="slx" onclick="delTeamMember(${i})">🗑</button></div>`;}).join(''):'<div style="color:#94a3b8;font-size:13px;padding:8px 0">No members yet — add below.</div>';}
+function addTeamMember(){var n=(document.getElementById('tm_name').value||'').trim();if(!n)return;var ph=(document.getElementById('tm_phone').value||'').trim();var t=document.getElementById('tm_team').value;TEAMMEMBERS.push({name:n,phone:ph,team:t});saveTeam();document.getElementById('tm_name').value='';document.getElementById('tm_phone').value='';renderTeamList();if(curTab==='teams')renderTeams();}
+function setTMField(i,f,v){if(!TEAMMEMBERS[i])return;TEAMMEMBERS[i][f]=(v||'').trim();saveTeam();if(f==='team'&&curTab==='teams')renderTeams();}
+function delTeamMember(i){TEAMMEMBERS.splice(i,1);saveTeam();renderTeamList();if(curTab==='teams')renderTeams();}
 function renderSalesList(){const el=document.getElementById('salesList');
   el.innerHTML=SALES.length?SALES.map((n,i)=>`<div class="slrow"><span style="flex:1">${esc(n)}</span><input class="sci" value="${esc(SCONTACT[n]||'')}" placeholder="contact no." onchange="setSCRow(${i},this.value)"><input class="sci" value="${esc(SEMAIL[n]||'')}" placeholder="email" style="width:160px" onchange="setSERow(${i},this.value)"><button class="slx" onclick="delSalesRow(${i})">🗑</button></div>`).join(''):'<div style="color:#94a3b8;font-size:13px;padding:8px 0">No names yet - add one below.</div>';}
 function addSalesName(){const i=document.getElementById('s_new');const c=document.getElementById('s_newc');const n=(i.value||'').trim();if(!n)return;if(SALES.indexOf(n)<0){SALES.push(n);saveSales();}if(c&&c.value.trim()){SCONTACT[n]=c.value.trim();saveSC();}const em=document.getElementById('s_newe');if(em&&em.value.trim()){SEMAIL[n]=em.value.trim();saveSE();}i.value='';if(c)c.value='';if(em)em.value='';renderSalesList();render();}
@@ -812,9 +829,9 @@ function renderTeams(){const el=document.getElementById('list');if(!el)return;
     var vals=names.map(n=>r.done[n]+r.inprog[n]);var max=Math.max(1,...vals);
     return `<div class="bars">`+names.map((n,i)=>{var tot=r.done[n]+r.inprog[n];return `<div class="brow"><span class="bname">${esc(n)}</span><span class="btrack"><i class="bfill bf${i%3}" style="width:${Math.round(tot/max*100)}%"></i></span><span class="bval">${tot}</span></div><div class="bsub"><b style="color:#334155">${r.done[n]}</b> completed &nbsp;&nbsp;<span class="apill">${r.inprog[n]} in charge</span></div>`;}).join('')+`</div><div class="tsum">Bar = all deals in each salesperson's charge (assigning a job grows it); <b>completed</b> = jobs done.</div>`;}
   function teamBlock(){var o=teamStats(teamPeriod);var done=o.done,assigned=o.assigned,unassigned=o.unassigned;var vals=TEAMS.map(t=>done[t]);var max=Math.max(1,...vals);var total=vals.reduce((a,b)=>a+b,0);var totAssigned=TEAMS.reduce((a,t)=>a+assigned[t],0);
-    return `<div class="bars">`+TEAMS.map((t,i)=>`<div class="brow"><span class="bname">${t}</span><span class="btrack"><i class="bfill bf${i}" style="width:${Math.round(done[t]/max*100)}%"></i></span><span class="bval">${done[t]}</span></div><div class="bsub"><b style="color:#334155">${done[t]}</b> completed &nbsp;&nbsp;<span class="apill">${assigned[t]} assigned</span></div>`).join('')+`</div><div class="tsum"><b>${total}</b> completed this period \u00b7 <b>${totAssigned}</b> currently assigned${unassigned?` \u00b7 <span style="color:#b45309">${unassigned} completed with no team tag</span>`:''}</div>`;}
+    return `<div class="bars">`+TEAMS.map((t,i)=>`<div class="brow"><span class="bname">${t}</span><span class="btrack"><i class="bfill bf${i}" style="width:${Math.round(done[t]/max*100)}%"></i></span><span class="bval">${done[t]}</span></div><div class="bsub"><b style="color:#334155">${done[t]}</b> completed &nbsp;&nbsp;<span class="apill">${assigned[t]} assigned</span></div>${(function(){var ms=TEAMMEMBERS.filter(function(m){return m.team===t;});return ms.length?`<div class="tmem">👥 ${ms.map(function(m){return esc(m.name)+(m.phone?' ('+esc(m.phone)+')':'');}).join(', ')}</div>`:'';})()}`).join('')+`</div><div class="tsum"><b>${total}</b> completed this period \u00b7 <b>${totAssigned}</b> currently assigned${unassigned?` \u00b7 <span style="color:#b45309">${unassigned} completed with no team tag</span>`:''}</div>`;}
   var sub=(t)=>`<div class="psub">${t}</div>`;
-  let h=`<div class="teamwrap"><div class="teamhd"><span>\U0001F4C8 Performance</span><span style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span class="ptogwrap">${tog('both','Both')}${tog('team','By team')}${tog('sales','By sales')}</span><select class="stsel" onchange="teamPeriod=this.value;renderTeams()">${opt('week','This week')}${opt('month','This month')}${opt('all','Show all')}</select></span></div>`;
+  let h=`<div class="teamwrap"><div class="teamhd"><span>📈 Performance</span><span style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span class="ptogwrap">${tog('both','Both')}${tog('team','By team')}${tog('sales','By sales')}</span><button class="mbtn sec" style="padding:4px 11px;font-size:12px" onclick="openTeamMgr()">👥 Members</button><select class="stsel" onchange="teamPeriod=this.value;renderTeams()">${opt('week','This week')}${opt('month','This month')}${opt('all','Show all')}</select></span></div>`;
   if(perfMode==='team')h+=teamBlock();
   else if(perfMode==='sales')h+=salesBlock();
   else h+=sub('By team')+teamBlock()+sub('By sales')+salesBlock();
