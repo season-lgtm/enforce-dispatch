@@ -93,7 +93,8 @@ header h1{font-size:19px;font-weight:700}header p{opacity:.9;font-size:12.5px;ma
 .refval:hover,.noteval:hover{background:#f1f5f9}
 .refval:focus,.noteval:focus{outline:none;border-bottom:2px solid #4f46e5;background:#fff}
 .refval:empty:before,.noteval:empty:before{content:attr(data-ph);color:#9aa3b2;font-style:italic}
-.segrow{display:flex;gap:6px;margin:0 2px 10px;flex-wrap:wrap}
+.segrow{display:flex;gap:6px;margin:0 2px 10px;flex-wrap:wrap;flex-basis:100%;width:100%}
+.segtog{align-self:flex-start}
 .segtog{border:1px solid #cbd5e1;background:#fff;color:#475569;border-radius:7px;padding:4px 13px;font-size:12px;font-weight:600;cursor:pointer}
 .segtog.on{background:#4f46e5;color:#fff;border-color:#4f46e5}
 .yb{font-weight:700}
@@ -719,13 +720,19 @@ function genContract(id,type){var b=itemById(id);if(!b)return;var v=eget(b);
   var today=new Date().toLocaleDateString('en-SG',{year:'numeric',month:'long',day:'numeric'});
   var freqN=(store[id]&&store[id].freqManual)||v.freq||4;var freqTxt=freqN+' times per year';
   var parts=comp?'<li>All spare parts related to the system are covered by this AMC or by EFAG product warranty.</li>':'<li>Any spare parts not covered by this AMC or EFAG product warranty shall be quoted separately, with prior client approval on cost before repair.</li><li>A <b>10% discount</b> applies on authorized EFAG parts.</li>';
-  var freeV=comp?4:6;var addV=comp?'220.00':'250.00';
-  var body=`<div class="dt"><div>Between: <b>${ENF.name}</b> (EFAG)<br>And: <b>${esc(v.client||'[Client]')}</b><br>${esc(v.loc||v.postal||'')}<br>Attn: ${esc(v.contact||'')}</div><div style="text-align:right"><b>${T} AMC</b><br>Agreement No: ${no}<br>Date of proposal: ${today}<br>Validity: 30 days</div></div>
-  <h1>${comp?'Comprehensive':'Non-Comprehensive'} Annual Maintenance Contract - Auto Door / Gate Operator</h1>
-  <div class="sec">Service and Pricing</div>
+  var commercial=/commercial/i.test(v.cat||'');var freeV=comp?4:(commercial?4:6);var addV=comp?'220.00':(commercial?'200.00':'250.00');var sigName=commercial?'Hii Wen Chuan':ENF.signer;var sigEmail=commercial?'service2@enforce.com.sg':ENF.signerEmail;var sigTitle=commercial?'Sales Coordinator — Service & Maintenance Division':'';var emTel=commercial?'8807 3351':ENF.signerTel;var pricing=commercial?`<div class="sec">Service &amp; Pricing</div>
+  <table><tr><td class="k">Site location</td><td contenteditable>${esc(v.loc||v.postal||'')}</td></tr><tr><td class="k">Equipment</td><td contenteditable>${esc(v.equip||'')} — <b>__</b> sets</td></tr></table>
+  <p class="fine"><b>Option A: 1-Year Contract</b></p>
+  <ul class="fine"><li>Maintenance frequency: <span contenteditable>${freqTxt} (Quarterly)</span></li><li>Price per equipment: S$<span contenteditable>800.00</span> (S$<span contenteditable>200.00</span> &times; ${freqN}) per year per system</li><li>Estimated cost (1 year): S$<span contenteditable>0.00</span> &nbsp;&middot;&nbsp; GST 9%: S$<span contenteditable>0.00</span> &nbsp;&middot;&nbsp; <b>Total Payable: S$<span contenteditable>0.00</span></b></li><li>Contract period: <span contenteditable>${(v.start||'____')} to ____</span> &nbsp;&middot;&nbsp; Commencement: <span contenteditable>TBC</span></li><li>Payment Terms: Payment Per Service Rendered @ S$<span contenteditable>____</span> before GST.</li></ul>
+  <p class="fine"><b>Option B: 2-Years Contract</b></p>
+  <ul class="fine"><li>Maintenance frequency: <span contenteditable>${freqTxt} (Quarterly)</span></li><li>Price per equipment: S$<span contenteditable>600.00</span> (S$<span contenteditable>150.00</span> &times; ${freqN}) per year per system</li><li>Estimated cost (2 years): S$<span contenteditable>0.00</span> &nbsp;&middot;&nbsp; GST 9%: S$<span contenteditable>0.00</span> &nbsp;&middot;&nbsp; <b>Total Payable: S$<span contenteditable>0.00</span></b></li><li>Contract period: <span contenteditable>${(v.start||'____')} to ____</span> &nbsp;&middot;&nbsp; Commencement: <span contenteditable>TBC</span></li><li>Payment Terms: Payment Per Service Rendered @ S$<span contenteditable>____</span> before GST.</li></ul>
+  <div class="sec">Remarks</div><ul class="fine"><li>Routine services performed during office hours (day jobs). Weekend or night services quoted separately.</li><li>Price does not include scaffolding &amp; work-at-height for each servicing; proposed separately.</li><li>Any exclusions, additional charges or replacement parts not included in the quoted rates.</li></ul>`:`<div class="sec">Service and Pricing</div>
   <table><tr><td class="k">Site location</td><td contenteditable>${esc(v.loc||v.postal||'')}</td></tr><tr><td class="k">Equipment</td><td contenteditable>${esc(v.equip||'')}</td></tr><tr><td class="k">Contract length</td><td contenteditable>3 Years</td></tr><tr><td class="k">Maintenance frequency</td><td contenteditable>${freqTxt}</td></tr><tr><td class="k">Contract period</td><td contenteditable>${(v.start||'____')} to ${(v.expiry||'____')}</td></tr></table>
   <table class="tot"><tr><td>Sub-Total</td><td style="text-align:right" contenteditable>S$0.00</td></tr><tr><td>GST 9%</td><td style="text-align:right" contenteditable>S$0.00</td></tr><tr class="g"><td>Total Payable</td><td style="text-align:right" contenteditable>S$0.00</td></tr></table>
-  <p class="fine"><b>Payment Terms:</b> <span contenteditable>Payment upon completion of each servicing, 30 days upon receipt of invoice and supporting documents (Service Report / Delivery Order).</span></p>
+  <p class="fine"><b>Payment Terms:</b> <span contenteditable>Payment upon completion of each servicing, 30 days upon receipt of invoice and supporting documents (Service Report / Delivery Order).</span></p>`;
+  var body=`<div class="dt"><div>Between: <b>${ENF.name}</b> (EFAG)<br>And: <b>${esc(v.client||'[Client]')}</b><br>${esc(v.loc||v.postal||'')}<br>Attn: ${esc(v.contact||'')}</div><div style="text-align:right"><b>${T} AMC${commercial?' (Commercial)':''}</b><br>Agreement No: ${no}<br>Date of proposal: ${today}<br>Validity: 30 days</div></div>
+  <h1>${comp?'Comprehensive':'Non-Comprehensive'} Annual Maintenance Contract - Auto Door / Gate Operator</h1>
+  ${pricing}
   <div class="sec">Scheduled Maintenance</div>
   <p class="fine">EFAG shall perform routine periodic inspections (${freqTxt}) on the Auto Door / Gate / Barrier / Turnstile Operator system. Services include:</p>
   <ul class="fine"><li><b>Visual and Operational:</b> obstructions, panels/glass/frames, smooth open/close, noises, closing speed/force, springs, motor brushes/gears/belts, voltage/current, lock, structural mounting, motion sensors, auto-reverse.</li>
@@ -737,8 +744,8 @@ function genContract(id,type){var b=itemById(id);if(!b)return;var v=eget(b);
   <div class="sec">Emergency (Corrective) Maintenance</div>
   <ul class="fine"><li>Normal hours Mon-Sat 09:00-18:00 (excl Sun/PH). Free fault-call visits up to <b contenteditable>${freeV}</b> per year; additional visits S$<span contenteditable>${addV}</span> each.</li>
   <li>After-hours Mon-Sat 18:01-23:59: S$300.00 per visit.</li>
-  <li>00:00-23:59 and all day Sun/PH: S$500.00 per visit.</li>
-  <li>Emergency contact: ${ENF.signer} - ${ENF.signerTel} / ${ENF.tel} - ${ENF.signerEmail}</li></ul>
+  <li>00:00-08:59 and all day Sun/PH: S$500.00 per visit.</li>
+  <li>Emergency contact: ${sigName} - ${emTel} / ${ENF.tel} - ${sigEmail}</li></ul>
   <div class="sec">Spare Parts, Repairs and Provisions</div>
   <ul class="fine">${parts}<li>Replacement parts carry a 3-6 month limited warranty (excl. natural causes / negligence).</li><li>Only EFAG-certified personnel perform works.</li><li>Exclusive supply: client procures all parts/products exclusively from EFAG during the maintenance period.</li></ul>
   <div class="sec">Warranty and Limitations</div>
@@ -747,8 +754,8 @@ function genContract(id,type){var b=itemById(id);if(!b)return;var v=eget(b);
   <p class="fine"><b>Payment Method:</b> ${ENF.bank}</p>
   <p class="fine"><b>Agreement:</b> This Contract constitutes the entire agreement; amendments must be in writing and signed by both parties.</p>
   <div class="sec">Acceptance and Signatures</div>
-  <div class="sign"><div>Signed by EFAG<br><br>${ENF.signer}<br>${ENF.signerEmail}</div><div>Signed by ${esc(v.client||'Client')}<br><br>Co.'s stamp / Name / Title / Date</div></div>`;
-  enfDoc(T+' AMC - '+(v.client||''),T+' AMC',ENF.service,body);
+  <div class="sign"><div>Signed by EFAG<br><br>${sigName}${sigTitle?'<br>'+sigTitle:''}<br>${sigEmail}</div><div>Signed by ${esc(v.client||'Client')}<br><br>Co.'s stamp / Name / Title / Date</div></div>`;
+  enfDoc(T+' AMC - '+(v.client||''),T+' AMC'+(commercial?' (Commercial)':''),ENF.service,body);
 }
 function chooseContract(id,ev){if(ev)ev.stopPropagation();var v=eget(itemById(id));var d=amcType(v);var comp=/comprehensive/i.test(d)&&!/non/i.test(d);
   var pick=confirm('Generate '+(comp?'COMPREHENSIVE':'NON-COMPREHENSIVE')+' contract for this customer?\n\nOK = '+(comp?'Comprehensive (parts included)':'Non-comprehensive (parts extra)')+'\nCancel = switch to the other type');
