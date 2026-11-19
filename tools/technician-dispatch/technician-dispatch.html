@@ -226,7 +226,8 @@ details.matrix summary{font-size:14px;color:#3730a3;cursor:pointer;font-weight:6
       <div class="frow"><label>Contract expiry</label><input id="e_expiry" placeholder="YYYY-MM-DD"></div>
     </div>
     <div class="frow"><label>Equipment / services</label><textarea id="e_equip"></textarea></div>
-    <div class="fgrid"><div class="frow"><label>Fault / issue (breakdown)</label><input id="e_fault"></div><div class="frow"><label>Warranty</label><input id="e_warranty" placeholder="e.g. Yes (CCTV System) / No"></div></div>
+    <div class="frow"><label>Fault / issue (breakdown)</label><input id="e_fault"></div>
+    <div class="fgrid"><div class="frow"><label>Warranty</label><input id="e_warranty" placeholder="e.g. Yes (CCTV System) / No"></div><div class="frow"><label>Warranty expiry</label><input id="e_warrantyExp" type="date"></div></div>
     <div class="fgrid"><div class="frow"><label>Visits done</label><input id="e_done" type="number" min="0"></div><div class="frow"><label>Total visits</label><input id="e_total" type="number" min="0"></div></div>
     <div class="frow"><label>Notes / remarks</label><textarea id="e_notes"></textarea></div>
     <div class="mact"><button class="mbtn sec" onclick="closeEdit()">Cancel</button><button class="mbtn pri" onclick="saveEdit()">Save changes</button></div>
@@ -404,24 +405,24 @@ function counts(){
 function stats(){var mi=maintItems(),ri=RAW.renewals,all=mi.concat(ri),T=today();
   function due(d,mo){var x=pd(d);if(!x)return false;var lim=new Date(T);lim.setMonth(lim.getMonth()+mo);return x<=lim;}
   function over(d){var x=pd(d);return !!(x&&x<T);}
-  var cust={},refs={},withC={},noC={},comp={},ncomp={},commC={},resC={},newC={};
-  all.forEach(function(x){var v=eget(x);var k=ckey(v);cust[k]=1;if(v.ref){refs[v.ref]=1;withC[k]=1;}else{noC[k]=1;}var t=amcType(v);if(t==='Comprehensive')comp[v.ref||k]=1;else if(t==='Non-comprehensive')ncomp[v.ref||k]=1;if(/commercial/i.test(v.cat||''))commC[k]=1;else if(/residential/i.test(v.cat||''))resC[k]=1;if(v._new)newC[k]=1;});
+  var cust={},refs={},withC={},noC={},comp={},ncomp={},commC={},resC={},newC={},warrC={};
+  all.forEach(function(x){var v=eget(x);var k=ckey(v);cust[k]=1;if(v.ref){refs[v.ref]=1;withC[k]=1;}else{noC[k]=1;}var t=amcType(v);if(t==='Comprehensive')comp[v.ref||k]=1;else if(t==='Non-comprehensive')ncomp[v.ref||k]=1;if(/commercial/i.test(v.cat||''))commC[k]=1;else if(/residential/i.test(v.cat||''))resC[k]=1;if(v._new)newC[k]=1;if(v.warrantyExp){var wd=pd(v.warrantyExp);if(wd){var wdd=(wd-T)/MS;if(wdd>=0&&wdd<=90)warrC[k]=1;}}});
   var mS=mi.filter(function(x){return openM(x.id);}),rS=ri.filter(function(x){return stOf(x.id)==='sched';});
-  return{customers:Object.keys(cust).length,contracts:Object.keys(refs).length,withContract:Object.keys(withC).length,noContract:Object.keys(noC).length,commercial:Object.keys(commC).length,residential:Object.keys(resC).length,newCust:Object.keys(newC).length,comp:Object.keys(comp).length,ncomp:Object.keys(ncomp).length,
+  return{customers:Object.keys(cust).length,contracts:Object.keys(refs).length,withContract:Object.keys(withC).length,noContract:Object.keys(noC).length,commercial:Object.keys(commC).length,residential:Object.keys(resC).length,newCust:Object.keys(newC).length,warrExpiring:Object.keys(warrC).length,comp:Object.keys(comp).length,ncomp:Object.keys(ncomp).length,
     maintTodo:mS.length,maintOver:mS.filter(function(x){return over(dueDateM(x));}).length,maintDue1:mS.filter(function(x){return due(dueDateM(x),1);}).length,maintDue2:mS.filter(function(x){return due(dueDateM(x),2);}).length,maintDue3:mS.filter(function(x){return due(dueDateM(x),3);}).length,maintDone:mi.filter(function(x){return stOf(x.id)==='done_m';}).length,
     renewTodo:rS.length,renewOver:rS.filter(function(x){return over(x.expiry);}).length,renewDue1:rS.filter(function(x){return due(x.expiry,1);}).length,renewDue2:rS.filter(function(x){return due(x.expiry,2);}).length,renewDue3:rS.filter(function(x){return due(x.expiry,3);}).length,renewDone:ri.filter(function(x){return stOf(x.id)==='done_r';}).length};}
 function statsPanel(){var el=document.getElementById('bizstats');if(!el)return;var s=stats();
   function grp(title,items){return '<div class="sgrp"><div class="sgt">'+title+'</div>'+items.map(function(it){return '<div class="srow2" title="click to see these" onclick="jumpStat(\''+it[2]+'\')"><span>'+it[0]+'</span><b>'+it[1]+'</b></div>';}).join('')+'</div>';}
   el.innerHTML=grp('Customers',[['Total customers',s.customers,'cust'],['Commercial',s.commercial,'comm'],['Residential',s.residential,'res'],['With contract',s.withContract,'withc'],['No contract',s.noContract,'noc'],['New customers',s.newCust,'new']])
-   +grp('Contracts',[['Total contracts',s.contracts,'contracts'],['Comprehensive',s.comp,'comp'],['Non-comprehensive',s.ncomp,'ncomp']])
+   +grp('Contracts',[['Total contracts',s.contracts,'contracts'],['Comprehensive',s.comp,'comp'],['Non-comprehensive',s.ncomp,'ncomp'],['Warranty ≤3mo',s.warrExpiring,'warr']])
    +grp('Maintenance',[['To do',s.maintTodo,'m_todo'],['Overdue',s.maintOver,'m_over'],['Due \u22641 mo',s.maintDue1,'m_due1'],['Due \u22642 mo',s.maintDue2,'m_due2'],['Due \u22643 mo',s.maintDue3,'m_due3'],['Done',s.maintDone,'m_done']])
    +grp('Renewals',[['To do',s.renewTodo,'r_todo'],['Overdue',s.renewOver,'r_over'],['Due \u22641 mo',s.renewDue1,'r_due1'],['Due \u22642 mo',s.renewDue2,'r_due2'],['Due \u22643 mo',s.renewDue3,'r_due3'],['Done',s.renewDone,'r_done']]);}
-function jumpStat(kind){['cat','zone','product','amc','team','sales','status'].forEach(function(k){flt[k].clear();});flt.due=0;flt.review=false;flt.moved=false;flt.overdue=false;flt.nocontract=false;flt.newonly=false;curMonth='ALL';
-  var map={cust:['maint'],comm:['maint','cat:Commercial'],res:['maint','cat:Residential'],new:['maint','newonly'],withc:['maint'],noc:['maint','nocontract'],contracts:['maint'],comp:['maint','amc:Comprehensive'],ncomp:['maint','amc:Non-comprehensive'],
+function jumpStat(kind){['cat','zone','product','amc','team','sales','status'].forEach(function(k){flt[k].clear();});flt.due=0;flt.review=false;flt.moved=false;flt.overdue=false;flt.nocontract=false;flt.newonly=false;flt.warrsoon=false;curMonth='ALL';
+  var map={cust:['maint'],comm:['maint','cat:Commercial'],res:['maint','cat:Residential'],new:['maint','newonly'],warr:['maint','warrsoon'],withc:['maint'],noc:['maint','nocontract'],contracts:['maint'],comp:['maint','amc:Comprehensive'],ncomp:['maint','amc:Non-comprehensive'],
     m_todo:['maint'],m_over:['maint','overdue'],m_due1:['maint','due1'],m_due2:['maint','due2'],m_due3:['maint','due3'],m_done:['donem'],
     r_todo:['renew'],r_over:['renew','overdue'],r_due1:['renew','due1'],r_due2:['renew','due2'],r_due3:['renew','due3'],r_done:['doner']};
   var cfg=map[kind]||['maint'];curTab=cfg[0];
-  cfg.slice(1).forEach(function(f){if(f==='overdue')flt.overdue=true;else if(f==='nocontract')flt.nocontract=true;else if(f.indexOf('due')===0)flt.due=parseInt(f.slice(3));else if(f.indexOf('amc:')===0)flt.amc=new Set([f.slice(4)]);else if(f.indexOf('cat:')===0)flt.cat=new Set([f.slice(4)]);else if(f==='newonly')flt.newonly=true;});
+  cfg.slice(1).forEach(function(f){if(f==='overdue')flt.overdue=true;else if(f==='nocontract')flt.nocontract=true;else if(f.indexOf('due')===0)flt.due=parseInt(f.slice(3));else if(f.indexOf('amc:')===0)flt.amc=new Set([f.slice(4)]);else if(f.indexOf('cat:')===0)flt.cat=new Set([f.slice(4)]);else if(f==='newonly')flt.newonly=true;else if(f==='warrsoon')flt.warrsoon=true;});
   tabbar();syncMonthUI();renderFilterPanel();updateFilterCount();render();var l=document.getElementById('list');if(l)l.scrollIntoView({block:'start'});}
 function matrixRender(){
   const items=maintItems().filter(x=>openM(x.id));
@@ -486,7 +487,7 @@ function syncMonthUI(){
 function goMonth(m){curMonth=m;syncMonthUI();render()}
 function toggleZone(z){open[z]=!open[z];render()}
 function expandAll(v){zones.forEach(z=>open[z]=v);render()}
-const flt={cat:new Set(),zone:new Set(),product:new Set(),amc:new Set(),team:new Set(),sales:new Set(),status:new Set(),due:0,overdue:false,nocontract:false,newonly:false,review:false,moved:false};
+const flt={cat:new Set(),zone:new Set(),product:new Set(),amc:new Set(),team:new Set(),sales:new Set(),status:new Set(),due:0,overdue:false,nocontract:false,newonly:false,warrsoon:false,review:false,moved:false};
 function allItems(){return maintItems().concat(RAW.renewals);}
 function distinct(fn){const set=new Set();allItems().forEach(x=>{const v=fn(x);if(v)set.add(v);});return [...set].sort();}
 function productType(v){const e=((v.equip||'')+' '+(v.cat||'')).toLowerCase();
@@ -499,6 +500,7 @@ function productType(v){const e=((v.equip||'')+' '+(v.cat||'')).toLowerCase();
   if(/window/.test(e))return 'Auto Window';
   if(/cctv|camera|alarm|intercom|access control|security/.test(e))return 'Security / CCTV';
   return 'Other';}
+function warrantyAlert(v){if(!v.warrantyExp)return '';var d=pd(v.warrantyExp);if(!d)return '';var days=Math.round((d-today())/MS);if(days<0)return ' <span style="color:#dc2626;font-weight:600">⚠ warranty expired</span>';if(days<=90)return ' <span style="color:#dc2626;font-weight:600">🔔 expiring in '+days+'d</span>';return '';}
 function amcType(v){var ed=edits[ckey(v)];var ov=(ed&&ed.amc)||v.amc;
   if(ov==='Comprehensive'||ov==='Non-comprehensive'||ov==='Unspecified')return ov;
   var e=(v.equip||'').toLowerCase();
@@ -519,7 +521,7 @@ function dueGroup(){var opts=[[0,'Any time'],[1,'Next 1 month'],[2,'Next 2 month
 function setDue(n){flt.due=(flt.due===n?0:n);renderFilterPanel();updateFilterCount();}
 function toggleChip(key,val){const set=flt[key];set.has(val)?set.delete(val):set.add(val);renderFilterPanel();updateFilterCount();}
 function toggleReview(){flt.review=!flt.review;renderFilterPanel();updateFilterCount();}
-function clearFilters(){['cat','zone','product','amc','team','sales','status'].forEach(k=>flt[k].clear());flt.review=false;flt.moved=false;flt.overdue=false;flt.nocontract=false;flt.newonly=false;document.getElementById('q').value='';flt.due=0;renderFilterPanel();updateFilterCount();render();}
+function clearFilters(){['cat','zone','product','amc','team','sales','status'].forEach(k=>flt[k].clear());flt.review=false;flt.moved=false;flt.overdue=false;flt.nocontract=false;flt.newonly=false;flt.warrsoon=false;document.getElementById('q').value='';flt.due=0;renderFilterPanel();updateFilterCount();render();}
 function activeFilterCount(){let n=['cat','zone','product','amc','team','sales','status'].reduce((a,k)=>a+flt[k].size,0);if(flt.review)n++;if(flt.moved)n++;if(flt.due)n++;return n;}
 function updateFilterCount(){const el=document.getElementById('fltCount');if(el){const c=activeFilterCount();el.textContent=c?'('+c+')':'';}}
 function toggleFilters(){const p=document.getElementById('filterpanel');p.style.display=p.style.display==='none'?'block':'none';}
@@ -576,6 +578,7 @@ function getRows(){
   if(flt.overdue)arr=arr.filter(o=>{var d=pd(isRenewTab()?o.it.expiry:dueDateM(o.it));return d&&d<today();});
   if(flt.nocontract)arr=arr.filter(o=>!eget(o.it).ref);
   if(flt.newonly)arr=arr.filter(o=>eget(o.it)._new);
+  if(flt.warrsoon)arr=arr.filter(o=>{var w=eget(o.it).warrantyExp;if(!w)return false;var d=pd(w);if(!d)return false;var dy=(d-today())/MS;return dy>=0&&dy<=90;});
   const dm=flt.due||0;
   if(dm){const lim=new Date();lim.setMonth(lim.getMonth()+dm);arr=arr.filter(o=>{const d=pd(isRenewTab()?o.it.expiry:(planOf(o.it)||o.it.date));return d&&d<=lim;});}
   if(q)arr=arr.filter(o=>((o.it.client||'')+(o.it.loc||'')+(o.it.ref||'')+(o.it.equip||'')+((eget(o.it).notes)||'')).toLowerCase().includes(q));
@@ -777,11 +780,11 @@ function openEdit(id){const b=itemById(id);if(!b)return;const v=eget(b);editId=i
   const g=x=>document.getElementById(x);
   g('e_client').value=v.client||'';g('e_contact').value=v.contact||'';g('e_loc').value=v.loc||'';g('e_postal').value=v.postal||'';
   g('e_zone').value=zoneOf(v);g('e_equip').value=v.equip||'';g('e_freq').value=v.freq||'';g('e_start').value=v.start||'';g('e_expiry').value=v.expiry||'';
-  g('e_ref').value=v.ref||'';g('e_notes').value=v.notes||'';g('e_amc').value=v.amc||'';g('e_fault').value=v.fault||'';g('e_warranty').value=v.warranty||'';var _L=liveDone(editBase);g('e_done').value=_L.done;g('e_total').value=_L.total;
+  g('e_ref').value=v.ref||'';g('e_notes').value=v.notes||'';g('e_amc').value=v.amc||'';g('e_fault').value=v.fault||'';g('e_warranty').value=v.warranty||'';g('e_warrantyExp').value=v.warrantyExp||'';var _L=liveDone(editBase);g('e_done').value=_L.done;g('e_total').value=_L.total;
   g('editModal').style.display='flex';}
 function closeEdit(){document.getElementById('editModal').style.display='none';editId=null;editBase=null;}
 function saveEdit(){if(!editBase)return;const g=x=>document.getElementById(x).value.trim();const k=ckey(editBase);
-  edits[k]=Object.assign({},edits[k],{client:g('e_client'),contact:g('e_contact'),loc:g('e_loc'),postal:g('e_postal'),zone:g('e_zone'),equip:g('e_equip'),freq:g('e_freq'),start:g('e_start'),expiry:g('e_expiry'),ref:g('e_ref'),notes:g('e_notes'),amc:g('e_amc'),fault:g('e_fault'),warranty:g('e_warranty'),done_n:g('e_done'),total:g('e_total')});
+  edits[k]=Object.assign({},edits[k],{client:g('e_client'),contact:g('e_contact'),loc:g('e_loc'),postal:g('e_postal'),zone:g('e_zone'),equip:g('e_equip'),freq:g('e_freq'),start:g('e_start'),expiry:g('e_expiry'),ref:g('e_ref'),notes:g('e_notes'),amc:g('e_amc'),fault:g('e_fault'),warranty:g('e_warranty'),warrantyExp:g('e_warrantyExp'),done_n:g('e_done'),total:g('e_total')});
   saveEdits();closeEdit();kpis();matrixRender();tabbar();syncMonthUI();render();}
 /* team performance + chart */
 function periodStart(p){const d=today();if(p==='week'){const dow=(d.getDay()+6)%7;return new Date(d.getTime()-dow*MS).getTime();}if(p==='month'){return new Date(d.getFullYear(),d.getMonth(),1).getTime();}return 0;}
@@ -854,9 +857,9 @@ function render(){
           <div class="ir"><span class="ik">Frequency</span><span class="iv">${(store[id]&&store[id].freqManual)?store[id].freqManual+'× / year (manual)':(v.freq?v.freq+'× / year':'—')}</span></div>
           ${o.isR?'':`<div class="ir"><span class="ik">Visits</span><span class="iv" style="cursor:pointer;border-bottom:1px dashed #c3ccdb" title="click to edit done / total" onclick="openEdit('${id}')">${L.done} / ${L.total} done · <b>${L.left} left</b></span></div>`}
           ${o.isR?'':(function(){var dd=maintItems().filter(function(x){return x.ref&&x.ref===v.ref&&stOf(x.id)==='done_m'&&store[x.id]&&store[x.id].doneAt;}).map(function(x){return new Date(store[x.id].doneAt).toLocaleDateString('en-SG',{year:'numeric',month:'short',day:'numeric'});});if(!dd.length&&stOf(o.it.id)==='done_m'&&store[o.it.id]&&store[o.it.id].doneAt)dd.push(new Date(store[o.it.id].doneAt).toLocaleDateString('en-SG',{year:'numeric',month:'short',day:'numeric'}));return dd.length?`<div class="ir"><span class="ik">Done on</span><span class="iv" style="color:#16a34a;font-weight:600">${dd.join(' · ')}</span></div>`:'';})()}
-          ${visitsOf(o.it).length?`<div class="ir"><span class="ik">Schedule</span><span class="iv">${visitsOf(o.it).map((x,i)=>(x.done?'✓ ':'• ')+(x.d?x.d.replace('T',' '):'(no date)')+(x.team?' · '+x.team:'')).join('<br>')}</span></div>`:''}
+          ${visitsOf(o.it).length?`<div class="ir"><span class="ik">Visits timeline</span><span class="iv">${visitsOf(o.it).slice().sort((a,b)=>((a.d||'')<(b.d||'')?-1:1)).map(x=>`<span style="color:${x.done?'#16a34a':'#4f46e5'}">${x.done?'✓ done':'📅 planned'} ${x.d?x.d.replace('T',' '):'(no date)'}${x.team?' · '+x.team:''}</span>`).join('<br>')}</span></div>`:''}
           ${teamOf(id)?`<div class="ir"><span class="ik">Team</span><span class="iv"><b>${teamOf(id)}</b></span></div>`:''}${salesOf(id)?`<div class="ir"><span class="ik">Sales</span><span class="iv">${esc(salesOf(id))}</span></div>`:''}<div class="ir"><span class="ik">Remarks</span><span class="iv"><span class="noteval" contenteditable data-ph="click to add remarks / notes…" onclick="event.stopPropagation()" onblur="setNote('${id}',this.innerText)">${esc(v.notes)||''}</span></span></div>
-          ${(store[id]&&store[id].movedTo)?`<div class="ir"><span class="ik">Delayed</span><span class="iv">from ${store[id].origMonth||'?'} → ${store[id].moveDate||store[id].movedTo} · ${esc(store[id].moveReason||'')}</span></div>`:''}<div class="ir"><span class="ik">Equipment</span><span class="iv">${esc(v.equip)||'—'}</span></div>${v.fault?`<div class="ir"><span class="ik">Fault</span><span class="iv" style="color:#dc2626">${esc(v.fault)}</span></div>`:''}${v.warranty?`<div class="ir"><span class="ik">Warranty</span><span class="iv">${esc(v.warranty)}</span></div>`:''}
+          ${(store[id]&&store[id].movedTo)?`<div class="ir"><span class="ik">Delayed</span><span class="iv">from ${store[id].origMonth||'?'} → ${store[id].moveDate||store[id].movedTo} · ${esc(store[id].moveReason||'')}</span></div>`:''}<div class="ir"><span class="ik">Equipment</span><span class="iv">${esc(v.equip)||'—'}</span></div>${v.fault?`<div class="ir"><span class="ik">Fault</span><span class="iv" style="color:#dc2626">${esc(v.fault)}</span></div>`:''}${(v.warranty||v.warrantyExp)?`<div class="ir"><span class="ik">Warranty</span><span class="iv">${esc(v.warranty||'')}${v.warrantyExp?` · until ${v.warrantyExp}`:''}${warrantyAlert(v)}</span></div>`:''}
         </div>
       </div></div>`});
     h+='</div></div>'});
