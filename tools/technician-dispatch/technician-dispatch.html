@@ -93,6 +93,9 @@ header h1{font-size:19px;font-weight:700}header p{opacity:.9;font-size:12.5px;ma
 .refval:hover,.noteval:hover{background:#f1f5f9}
 .refval:focus,.noteval:focus{outline:none;border-bottom:2px solid #4f46e5;background:#fff}
 .refval:empty:before,.noteval:empty:before{content:attr(data-ph);color:#9aa3b2;font-style:italic}
+.segrow{display:flex;gap:6px;margin:0 2px 10px;flex-wrap:wrap}
+.segtog{border:1px solid #cbd5e1;background:#fff;color:#475569;border-radius:7px;padding:4px 13px;font-size:12px;font-weight:600;cursor:pointer}
+.segtog.on{background:#4f46e5;color:#fff;border-color:#4f46e5}
 .yb{font-weight:700}
 .yb.yactive{background:#4f46e5;color:#fff}
 .mrow2{flex-basis:100%;display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;padding-top:8px;border-top:1px dashed #e5e9f0}
@@ -424,7 +427,8 @@ function counts(){
    teams:mi.filter(x=>stOf(x.id)==='done_m').length+ri.filter(x=>stOf(x.id)==='done_r').length,
   };
 }
-function stats(){var mi=maintItems(),ri=RAW.renewals,all=mi.concat(ri),T=today();
+let snapSeg='all';
+function stats(seg){var mi=maintItems(),ri=RAW.renewals;if(seg==='commercial'){mi=mi.filter(function(x){return /commercial/i.test(eget(x).cat||'');});ri=ri.filter(function(x){return /commercial/i.test(eget(x).cat||'');});}else if(seg==='residential'){mi=mi.filter(function(x){return /residential/i.test(eget(x).cat||'');});ri=ri.filter(function(x){return /residential/i.test(eget(x).cat||'');});}var all=mi.concat(ri),T=today();
   function due(d,mo){var x=pd(d);if(!x)return false;var lim=new Date(T);lim.setMonth(lim.getMonth()+mo);return x<=lim;}
   function over(d){var x=pd(d);return !!(x&&x<T);}
   var cust={},refs={},withC={},noC={},comp={},ncomp={},commC={},resC={},newC={},warrC={};
@@ -433,9 +437,10 @@ function stats(){var mi=maintItems(),ri=RAW.renewals,all=mi.concat(ri),T=today()
   return{customers:Object.keys(cust).length,contracts:Object.keys(refs).length,withContract:Object.keys(withC).length,noContract:Object.keys(noC).length,commercial:Object.keys(commC).length,residential:Object.keys(resC).length,newCust:Object.keys(newC).length,warrExpiring:Object.keys(warrC).length,comp:Object.keys(comp).length,ncomp:Object.keys(ncomp).length,
     maintTodo:mS.length,maintOver:mS.filter(function(x){return over(dueDateM(x));}).length,maintDue1:mS.filter(function(x){return due(dueDateM(x),1);}).length,maintDue2:mS.filter(function(x){return due(dueDateM(x),2);}).length,maintDue3:mS.filter(function(x){return due(dueDateM(x),3);}).length,maintDone:mi.filter(function(x){return stOf(x.id)==='done_m';}).length,
     renewTodo:rS.length,renewOver:rS.filter(function(x){return over(x.expiry);}).length,renewDue1:rS.filter(function(x){return due(x.expiry,1);}).length,renewDue2:rS.filter(function(x){return due(x.expiry,2);}).length,renewDue3:rS.filter(function(x){return due(x.expiry,3);}).length,renewDone:ri.filter(function(x){return stOf(x.id)==='done_r';}).length};}
-function statsPanel(){var el=document.getElementById('bizstats');if(!el)return;var s=stats();
+function setSnapSeg(v){snapSeg=v;statsPanel();}
+function statsPanel(){var el=document.getElementById('bizstats');if(!el)return;var s=stats(snapSeg);
   function grp(title,items){return '<div class="sgrp"><div class="sgt">'+title+'</div>'+items.map(function(it){return '<div class="srow2" title="click to see these" onclick="jumpStat(\''+it[2]+'\')"><span>'+it[0]+'</span><b>'+it[1]+'</b></div>';}).join('')+'</div>';}
-  el.innerHTML=grp('Customers',[['Total customers',s.customers,'cust'],['Commercial',s.commercial,'comm'],['Residential',s.residential,'res'],['With contract',s.withContract,'withc'],['No contract',s.noContract,'noc'],['New customers',s.newCust,'new']])
+  el.innerHTML='<div class="segrow">'+['all','commercial','residential'].map(function(v){var lbl={all:'All',commercial:'Commercial',residential:'Residential'}[v];return '<button class="segtog'+(snapSeg===v?' on':'')+'" onclick="setSnapSeg(\''+v+'\')">'+lbl+'</button>';}).join('')+'</div>'+grp('Customers',[['Total customers',s.customers,'cust'],['Commercial',s.commercial,'comm'],['Residential',s.residential,'res'],['With contract',s.withContract,'withc'],['No contract',s.noContract,'noc'],['New customers',s.newCust,'new']])
    +grp('Contracts',[['Total contracts',s.contracts,'contracts'],['Comprehensive',s.comp,'comp'],['Non-comprehensive',s.ncomp,'ncomp'],['Warranty ≤3mo',s.warrExpiring,'warr']])
    +grp('Maintenance',[['To do',s.maintTodo,'m_todo'],['Overdue',s.maintOver,'m_over'],['Due \u22641 mo',s.maintDue1,'m_due1'],['Due \u22642 mo',s.maintDue2,'m_due2'],['Due \u22643 mo',s.maintDue3,'m_due3'],['Done',s.maintDone,'m_done']])
    +grp('Renewals',[['To do',s.renewTodo,'r_todo'],['Overdue',s.renewOver,'r_over'],['Due \u22641 mo',s.renewDue1,'r_due1'],['Due \u22642 mo',s.renewDue2,'r_due2'],['Due \u22643 mo',s.renewDue3,'r_due3'],['Done',s.renewDone,'r_done']]);}
@@ -445,7 +450,7 @@ function jumpStat(kind){['cat','zone','product','amc','team','sales','status'].f
     r_todo:['renew'],r_over:['renew','overdue'],r_due1:['renew','due1'],r_due2:['renew','due2'],r_due3:['renew','due3'],r_done:['doner']};
   var cfg=map[kind]||['maint'];curTab=cfg[0];
   cfg.slice(1).forEach(function(f){if(f==='overdue')flt.overdue=true;else if(f==='nocontract')flt.nocontract=true;else if(f.indexOf('due')===0)flt.due=parseInt(f.slice(3));else if(f.indexOf('amc:')===0)flt.amc=new Set([f.slice(4)]);else if(f.indexOf('cat:')===0)flt.cat=new Set([f.slice(4)]);else if(f==='newonly')flt.newonly=true;else if(f==='warrsoon')flt.warrsoon=true;});
-  tabbar();syncMonthUI();renderFilterPanel();updateFilterCount();render();var l=document.getElementById('list');if(l)l.scrollIntoView({block:'start'});}
+  if(snapSeg&&snapSeg!=='all'&&!flt.cat.size)flt.cat=new Set([snapSeg==='commercial'?'Commercial':'Residential']);tabbar();syncMonthUI();renderFilterPanel();updateFilterCount();render();var l=document.getElementById('list');if(l)l.scrollIntoView({block:'start'});}
 function matrixRender(){
   const items=maintItems().filter(x=>openM(x.id));
   const eM=v=>(store[v.id]&&store[v.id].movedTo)||v.month;const ms=[...new Set(items.map(eM))].sort().slice(0,15);
