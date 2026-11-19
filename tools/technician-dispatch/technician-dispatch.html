@@ -702,7 +702,7 @@ function enfCSS(){return '*{box-sizing:border-box}body{font-family:-apple-system
 +'.sec{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#1f5fd6;margin:16px 0 6px;border-bottom:1px solid #e5e9f0;padding-bottom:3px}'
 +'.box{border:1px solid #dfe3ea;border-radius:6px;min-height:60px;padding:10px}'
 +'ul{margin:4px 0 4px 2px;padding-left:18px}li{margin:2px 0}'
-+'.chk{line-height:1.9}.chk span{display:inline-block;width:15px;height:15px;border:1.5px solid #9aa3b2;border-radius:3px;margin-right:8px;vertical-align:-3px}'
++'.chk{line-height:1.9}.ckitem{display:inline-flex;align-items:center;gap:7px;cursor:pointer}.ckitem input{width:15px;height:15px;cursor:pointer;margin:0;vertical-align:middle;accent-color:#4f46e5}.chk span{display:inline-block;width:15px;height:15px;border:1.5px solid #9aa3b2;border-radius:3px;margin-right:8px;vertical-align:-3px}'
 +'.tot{width:58%;margin-left:auto}.tot td{border:none;padding:3px 9px}.tot .g td{font-weight:800;font-size:15px;border-top:2px solid #16181d}'
 +'.fine{font-size:11px;color:#4a515e;line-height:1.5}'
 +'.sign{display:flex;gap:48px;margin-top:78px;page-break-inside:avoid}.sign div{flex:1;border-top:1px solid #16181d;padding-top:8px;font-size:12px;color:#5b6472}'
@@ -802,15 +802,15 @@ function genQuote(id){var b=itemById(id);if(!b)return;var v=eget(b);
 function genReport(id){var b=itemById(id);if(!b)return;var v=eget(b);var L=liveDone(b);var tm=teamOf(id)||'________';var sales=salesOf(id)||'';
   var dt=(planOf(b)||'').replace('T',' ')||new Date().toLocaleDateString('en-SG',{year:'numeric',month:'long',day:'numeric'});
   var row=function(k,val){return '<tr><td class="k">'+k+'</td><td>'+(esc(val)||'-')+'</td></tr>';};
-  var ck=function(t){return '<span></span>'+t;};
+  var ck=function(t){return '<label class="ckitem"><input type="checkbox"> '+t+'</label>';};
   var body=`<h1>Maintenance Service Report</h1>
   <table>${row('Customer',v.client)}${row('Site / location',v.loc||v.postal)}${row('Contact',v.contact)}${row('Contract Ref',v.ref)}${row('AMC type',amcType(v))}${row('Contract period',(v.start||'?')+' to '+(v.expiry||'?'))}${row('Visit',(L.done+1)+' of '+L.total+'  ('+L.left+' remaining)')}${row('Service date/time',dt)}${row('Zone',v.zone)}${row('Attended by (team)',tm)}${row('Sales in charge',sales)}</table>
   <div class="sec">Equipment serviced</div><div class="box" contenteditable>${esc(v.equip)||''}</div>
   <div class="sec">Maintenance checklist performed</div>
-  <div style="display:flex;gap:26px;flex-wrap:wrap"><div style="flex:1;min-width:250px"><b class="fine">Visual and Operational</b><div class="chk">${ck('Obstructions / panels / glass / frames')}<br>${ck('Smooth open/close, noise, speed/force')}<br>${ck('Springs, motor brushes, gears, belts')}<br>${ck('Voltage / current, lock function')}<br>${ck('Motion sensors and auto-reverse')}</div>
-  <b class="fine">Track and Rollers</b><div class="chk">${ck('Clean tracks, remove debris')}<br>${ck('Lubricate rollers/hinges (silicone)')}<br>${ck('Check alignment')}</div></div>
-  <div style="flex:1;min-width:250px"><b class="fine">Mechanical and Structural</b><div class="chk">${ck('Fasteners secure, speeds adjusted')}<br>${ck('Hold-open time, leaf/track alignment')}<br>${ck('Hinges/guides/gear racks')}</div>
-  <b class="fine">Sensor / Control and Electrical</b><div class="chk">${ck('Sensor range, remote/key switch')}<br>${ck('Photocell, auto-reset after power')}<br>${ck('Wiring, backup battery, override')}<br>${ck('Fire alarm integration')}</div></div></div>
+  <div style="display:flex;gap:26px;flex-wrap:wrap"><div style="flex:1;min-width:250px"><b class="fine">Visual and Operational</b><div class="chk" contenteditable="false">${ck('Obstructions / panels / glass / frames')}<br>${ck('Smooth open/close, noise, speed/force')}<br>${ck('Springs, motor brushes, gears, belts')}<br>${ck('Voltage / current, lock function')}<br>${ck('Motion sensors and auto-reverse')}</div>
+  <b class="fine">Track and Rollers</b><div class="chk" contenteditable="false">${ck('Clean tracks, remove debris')}<br>${ck('Lubricate rollers/hinges (silicone)')}<br>${ck('Check alignment')}</div></div>
+  <div style="flex:1;min-width:250px"><b class="fine">Mechanical and Structural</b><div class="chk" contenteditable="false">${ck('Fasteners secure, speeds adjusted')}<br>${ck('Hold-open time, leaf/track alignment')}<br>${ck('Hinges/guides/gear racks')}</div>
+  <b class="fine">Sensor / Control and Electrical</b><div class="chk" contenteditable="false">${ck('Sensor range, remote/key switch')}<br>${ck('Photocell, auto-reset after power')}<br>${ck('Wiring, backup battery, override')}<br>${ck('Fire alarm integration')}</div></div></div>
   <div class="sec">Findings / parts replaced / recommendations</div><div class="box" contenteditable></div>
   <div class="sec">Next scheduled visit</div><div class="box" style="min-height:32px" contenteditable></div>
   <div class="sign"><div>Technician name and signature<br><br>${esc(tm)}</div><div>Customer name and signature</div></div>`;
