@@ -93,6 +93,9 @@ header h1{font-size:19px;font-weight:700}header p{opacity:.9;font-size:12.5px;ma
 .refval:hover,.noteval:hover{background:#f1f5f9}
 .refval:focus,.noteval:focus{outline:none;border-bottom:2px solid #4f46e5;background:#fff}
 .refval:empty:before,.noteval:empty:before{content:attr(data-ph);color:#9aa3b2;font-style:italic}
+.yb{font-weight:700}
+.yb.yactive{background:#4f46e5;color:#fff}
+.mrow2{flex-basis:100%;display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;padding-top:8px;border-top:1px dashed #e5e9f0}
 .tmem{font-size:11px;color:#64748b;margin:1px 0 6px;padding-left:2px}
 .psub{font-size:12px;font-weight:700;color:#4f46e5;text-transform:uppercase;letter-spacing:.05em;margin:16px 0 8px;padding-bottom:4px;border-bottom:1px solid #eef2f7}
 .fgnote{font-weight:400;color:#94a3b8;font-size:11px}
@@ -336,7 +339,7 @@ function setSCRow(i,v){const n=SALES[i];if(n!=null){SCONTACT[n]=v.trim();saveSC(
 function setSERow(i,v){const n=SALES[i];if(n!=null){SEMAIL[n]=v.trim();saveSE();}}
 function salesOpts(cur){return '<option value="">Sales…</option>'+SALES.map(n=>`<option value="${esc(n)}" ${cur===n?'selected':''}>${esc(n)}</option>`).join('')+'<option value="__mgr">⚙ Manage names…</option>';}
 const zones=['East','West','Central','North','North-East','Unzoned'];
-const open={};let curTab='maint';let curMonth=null;let showPast=false;
+const open={};let curTab='maint';let curMonth=null;let curYear=null;let showPast=false;
 const MS=86400000;
 function today(){const d=new Date();return new Date(d.getFullYear(),d.getMonth(),d.getDate())}
 function pd(s){return s?new Date(s.length<=10?s+'T00:00:00':s):null}
@@ -486,6 +489,7 @@ function curItems(){
 function currentYM(){return new Date().toISOString().slice(0,7);}
 function mkey(o){return isRenewTab()?(o.it.expiry||'').slice(0,7):((store[o.it.id]&&store[o.it.id].movedTo)||o.it.month);}
 function togglePast(){showPast=!showPast;syncMonthUI();}
+function monthName(ym){var mm=['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];return mm[+ym.slice(5,7)]||ym;}
 function syncMonthUI(){
   const mbar=document.getElementById('monthbtns');
   if(isRemTab()||curTab==='teams'){mbar.style.display='none';return}
@@ -497,13 +501,19 @@ function syncMonthUI(){
   const future=allMs.filter(m=>m>=cur), past=allMs.filter(m=>m<cur);
   if(curMonth!=='ALL'&&!allMs.includes(curMonth))curMonth=future[0]||past[past.length-1];
   const cnt=m=>items.filter(o=>mkey(o)===m).length;
+  const vis=showPast?allMs:future;
+  const years=[...new Set(vis.map(m=>m.slice(0,4)))];
+  if(!curYear||years.indexOf(curYear)<0){curYear=(curMonth!=='ALL'&&years.indexOf(curMonth.slice(0,4))>=0)?curMonth.slice(0,4):(years.indexOf(cur.slice(0,4))>=0?cur.slice(0,4):years[0]);}
+  const ycnt=y=>vis.filter(m=>m.slice(0,4)===y).reduce((a,m)=>a+cnt(m),0);
   let html='<div class="mb '+(curMonth==='ALL'?'active':'')+'" onclick="goMonth(\'ALL\')">All</div>';
   if(past.length)html+='<div class="mb pastbtn" onclick="togglePast()">'+(showPast?'\u25be ':'\u25b8 ')+'Past / Expired ('+past.length+')</div>';
-  const vis=showPast?allMs:future;
-  html+=vis.map(m=>`<div class="mb ${m===curMonth?'active':''} ${m<cur?'pastm':''}" onclick="goMonth('${m}')">${m}<span class="c">${cnt(m)}</span></div>`).join('');
+  html+=years.map(y=>`<div class="mb yb ${y===curYear?'yactive':''}" onclick="setYear('${y}')">${y}<span class="c">${ycnt(y)}</span></div>`).join('');
+  const ms=vis.filter(m=>m.slice(0,4)===curYear);
+  html+='<div class="mrow2">'+ms.map(m=>`<div class="mb ${m===curMonth?'active':''} ${m<cur?'pastm':''}" onclick="goMonth('${m}')">${monthName(m)}<span class="c">${cnt(m)}</span></div>`).join('')+'</div>';
   mbar.innerHTML=html;
 }
-function goMonth(m){curMonth=m;syncMonthUI();render()}
+function setYear(y){curYear=y;syncMonthUI();}
+function goMonth(m){curMonth=m;if(m!=='ALL')curYear=m.slice(0,4);syncMonthUI();render()}
 function toggleZone(z){open[z]=!open[z];render()}
 function expandAll(v){zones.forEach(z=>open[z]=v);render()}
 const flt={cat:new Set(),zone:new Set(),product:new Set(),amc:new Set(),team:new Set(),sales:new Set(),status:new Set(),due:0,overdue:false,nocontract:false,newonly:false,warrsoon:false,review:false,moved:false};
