@@ -783,12 +783,14 @@ function chooseContract(id,ev){if(ev)ev.stopPropagation();var v=eget(itemById(id
   genContract(id, pick?(comp?'Comprehensive':'Non-comprehensive'):(comp?'Non-comprehensive':'Comprehensive'));
 }
 
-function genQuote(id){var b=itemById(id);if(!b)return;var v=eget(b);
+function chooseQuote(id,ev){if(ev)ev.stopPropagation();var v=eget(itemById(id));var isComm=/commercial/i.test(v.cat||'');var pick=confirm('Generate a quotation.\n\nOK = '+(isComm?'COMMERCIAL':'RESIDENTIAL')+' template\nCancel = '+(isComm?'RESIDENTIAL':'COMMERCIAL')+' template');genQuote(id,pick?(isComm?'commercial':'residential'):(isComm?'residential':'commercial'));}
+function genQuote(id,type){var b=itemById(id);if(!b)return;var v=eget(b);
+  type=(type||(/commercial/i.test(v.cat||'')?'commercial':'residential'));var commercial=type==='commercial';
   var no=docNo('QTN/EFAG/<seq>/<yy>');
   var today=new Date().toLocaleDateString('en-SG',{year:'numeric',month:'long',day:'numeric'});
   var subj=((v.equip?('Supply, install & service '+v.equip.split(',')[0]):'Auto door / gate system'))+' @ '+(v.loc||'site');
   var body=`<div class="dt"><div><b>${esc(v.client||'[Client]')}</b><br>${esc(v.loc||v.postal||'')}<br>Attn: ${esc(v.contact||'')}</div><div style="text-align:right"><b>QUOTATION</b><br>No: ${no}<br>Date: ${today}<br>Validity: 30 days</div></div>
-  <h1 contenteditable>Quotation: ${esc(subj)}</h1>
+  <h1 contenteditable>Quotation${commercial?' (Commercial)':''}: ${esc(subj)}</h1>
   <p class="fine">We are pleased to quote supply and installation / servicing of the above as follows:</p>
   <table><thead><tr><th style="width:34px">No</th><th>Description</th><th style="width:44px">Qty</th><th style="width:92px">Unit Price</th><th style="width:100px">Amount</th></tr></thead><tbody id="li">
   <tr><td>1</td><td contenteditable>${esc(v.equip||'To provide labour and equipment to supply and install ...')}</td><td contenteditable>1</td><td class="up" contenteditable>0.00</td><td class="amt" contenteditable>0.00</td></tr>
@@ -797,7 +799,7 @@ function genQuote(id){var b=itemById(id);if(!b)return;var v=eget(b);
   <tr><td>4</td><td contenteditable></td><td contenteditable></td><td class="up" contenteditable></td><td class="amt" contenteditable></td></tr>
   </tbody></table>
   <table class="tot"><tr><td>Sub-Total</td><td style="text-align:right" id="sub">S$0.00</td></tr><tr><td>GST 9%</td><td style="text-align:right" id="gst">S$0.00</td></tr><tr class="g"><td>Grand Total</td><td style="text-align:right" id="grand">S$0.00</td></tr></table>
-  <div class="sec">Important Notes</div><ul class="fine">
+  <div class="sec">Important Notes</div><ul class="fine">${commercial?`<li>Routine services are performed during office hours (day jobs); weekend or night services quoted separately.</li><li>Scaffolding &amp; work-at-height for each servicing not included; proposed separately.</li><li>Pricing is per equipment / per package as quoted; partial award may be re-priced.</li>`:``}
   <li>Power supply 230V AC 13A single phase and wiring by others.</li>
   <li>Site work, cement plinth, piping, power/data/control cabling and hacking works not included unless otherwise specified.</li>
   <li>Make good to wall, floor and ceiling finishes by others. Steel or necessary support by others unless otherwise specified.</li>
@@ -811,28 +813,33 @@ function genQuote(id){var b=itemById(id);if(!b)return;var v=eget(b);
   <li><b>Delivery:</b> 4-6 weeks from confirmation or subject to ex-stock availability.</li>
   <li><b>Warranty:</b> 1 year against manufacturing defects for the auto system. Excludes remote transmitters after handover and parts damaged by natural causes or negligence.</li></ul>
   <p class="fine">Payment: bank transfer to ${ENF.bank}.</p>
-  <div class="sign"><div>Yours faithfully,<br>${ENF.name}<br><br>${ENF.signer} - ${ENF.signerTel}</div><div>In Acceptance:<br><br><br>Co.'s Stamp / Signature</div></div>
+  <div class="sign"><div>Yours faithfully,<br>${ENF.name}<br><br>${commercial?'Hii Wen Chuan (Sales Coordinator)':ENF.signer} - ${commercial?'8807 3351':ENF.signerTel}</div><div>In Acceptance:<br><br><br>Co.'s Stamp / Signature</div></div>
   <div class="noprint" style="margin-top:14px"><button onclick="recalc()">Recalculate totals</button></div>
   <script>function money(x){x=parseFloat((x||'').toString().replace(/[^0-9.]/g,''))||0;return x;}
   function sgd(n){return 'S$'+n.toLocaleString('en-SG',{minimumFractionDigits:2,maximumFractionDigits:2});}
   function recalc(){var rows=document.querySelectorAll('#li tr');var sub=0;rows.forEach(function(r){var q=money(r.children[2].innerText);var up=money(r.children[3].innerText);var ac=r.children[4];var amt=money(ac.innerText);if((!amt)&&q&&up){amt=q*up;ac.innerText=amt.toFixed(2);}sub+=amt;});var gst=sub*0.09;document.getElementById('sub').innerText=sgd(sub);document.getElementById('gst').innerText=sgd(gst);document.getElementById('grand').innerText=sgd(sub+gst);}
   document.addEventListener('input',recalc);<\/script>`;
-  enfDoc('Quotation - '+(v.client||''),'QUOTATION',ENF.sales,body);
+  enfDoc('Quotation - '+(v.client||''),'QUOTATION'+(commercial?' (Commercial)':''),ENF.sales,body);
 }
 /* printable service report, pre-filled */
 function genReport(id){var b=itemById(id);if(!b)return;var v=eget(b);var L=liveDone(b);var tm=teamOf(id)||'________';var sales=salesOf(id)||'';
   var dt=(planOf(b)||'').replace('T',' ')||new Date().toLocaleDateString('en-SG',{year:'numeric',month:'long',day:'numeric'});
   var row=function(k,val){return '<tr><td class="k">'+k+'</td><td>'+(esc(val)||'-')+'</td></tr>';};
   var ck=function(t){return '<label class="ckitem"><input type="checkbox"> '+t+'</label>';};
+  var CKL=[
+  ['Auto Door / Gate / Barrier / Window / Turnstile / Shutter',['Ensure tightness of all screws, brackets, cover and end plates secured','Opening, closing &amp; braking speed','Hold open time','Sensor range and sensitivity','Remote/Key switch function','Lock function if installed','UPS functionality &amp; Battery voltage','Test emergency opening during power failure / manual override function','Normal operation after power resumes','Alignment of door / gate / barrier arm / window panel / slats','Hangar bracket secured','Track and rollers and anti-rise wheel and clean any debris','Belt / Gear / Track / Chain / Spring wear and tear and tension','Motor, mechanical head and gear shaft, end gear','Voltage, relay &amp; wiring continuity test','Limit switch signal','Roller / floor guides / secured and clean any debris','Lubrication of moving parts','Sticker logo']],
+  ['Security Systems',['Transformer output voltage','Induced A/C voltage power supply','Auxilliary output voltage','Battery check','SAB test (remove supply voltage)','Control panel check','Zone / Channels in use check','Line check (PSTN/LAN/WiFi)','Signal continuity Test','Voltage, relay &amp; wiring continuity check','Keypad check','Magnetic contacts check','Strobe light &amp; siren check','Indoor panel check','Audio / Video check','Camera function check','Recorder function check']],
+  ['Operable Wall / Slide &amp; Park Glass Door',['Ensure tightness of all screws, brackets, cover and end plates secured','Track and rollers &amp; anti-rise wheel wear &amp; tear','Track intersections and alignment','Spindle mechanism operating retractable seals','Door panel alignment','Lubrication of moving parts','Check locking mechanism','Pivot check','Hinges and connections']],
+  ['Manual Swing / Sliding Door',['Ensure tightness of all screws, brackets','Track and rollers &amp; anti-rise wheel','Top / bottom Pivot check','Door panel alignment','Closing speed','Hold open function','Door closer / floor spring condition','Floor guide check','Check locking mechanism']]
+  ];
+  var ckcol=function(gs){return gs.map(function(g){return '<b class="fine">'+g[0]+'</b><div class="chk" contenteditable="false">'+g[1].map(function(t){return '<label class="ckitem"><input type="checkbox"> '+t+'</label>';}).join('<br>')+'</div>';}).join('');};
+  var checklistHtml='<div style="display:flex;gap:26px;flex-wrap:wrap"><div style="flex:1;min-width:270px">'+ckcol([CKL[0],CKL[2]])+'</div><div style="flex:1;min-width:270px">'+ckcol([CKL[1],CKL[3]])+'</div></div>';
   var body=`<h1>Maintenance Service Report</h1>
   <table>${row('Customer',v.client)}${row('Site / location',v.loc||v.postal)}${row('Contact',v.contact)}${row('Contract Ref',v.ref)}${row('AMC type',amcType(v))}${row('Contract period',(v.start||'?')+' to '+(v.expiry||'?'))}${row('Visit',(L.done+1)+' of '+L.total+'  ('+L.left+' remaining)')}${row('Service date/time',dt)}${row('Zone',v.zone)}${row('Attended by (team)',tm)}${row('Sales in charge',sales)}</table>
   <div class="sec">Equipment serviced</div><div class="box" contenteditable>${esc(v.equip)||''}</div>
   <div class="sec">Maintenance checklist performed</div>
-  <div style="display:flex;gap:26px;flex-wrap:wrap"><div style="flex:1;min-width:250px"><b class="fine">Visual and Operational</b><div class="chk" contenteditable="false">${ck('Obstructions / panels / glass / frames')}<br>${ck('Smooth open/close, noise, speed/force')}<br>${ck('Springs, motor brushes, gears, belts')}<br>${ck('Voltage / current, lock function')}<br>${ck('Motion sensors and auto-reverse')}</div>
-  <b class="fine">Track and Rollers</b><div class="chk" contenteditable="false">${ck('Clean tracks, remove debris')}<br>${ck('Lubricate rollers/hinges (silicone)')}<br>${ck('Check alignment')}</div></div>
-  <div style="flex:1;min-width:250px"><b class="fine">Mechanical and Structural</b><div class="chk" contenteditable="false">${ck('Fasteners secure, speeds adjusted')}<br>${ck('Hold-open time, leaf/track alignment')}<br>${ck('Hinges/guides/gear racks')}</div>
-  <b class="fine">Sensor / Control and Electrical</b><div class="chk" contenteditable="false">${ck('Sensor range, remote/key switch')}<br>${ck('Photocell, auto-reset after power')}<br>${ck('Wiring, backup battery, override')}<br>${ck('Fire alarm integration')}</div></div></div>
-  <div class="sec">Findings / parts replaced / recommendations</div><div class="box" contenteditable></div>
+  ${checklistHtml}
+  <div class="sec">Faults / issues · parts replaced · recommendations</div><div class="box" contenteditable></div>
   <div class="sec">Next scheduled visit</div><div class="box" style="min-height:32px" contenteditable></div>
   <div class="sign"><div>Technician name and signature<br><br>${esc(tm)}</div><div>Customer name and signature</div></div>`;
   enfDoc('Service Report - '+(v.client||''),'SERVICE REPORT',ENF.service,body);
@@ -921,7 +928,7 @@ function render(){
           <button class="ab" onclick="openEdit('${id}')">✏️ Edit info</button>
           ${o.isR?'':`<button class="ab abwa" onclick="remindCustomer('${id}')">💬 Remind customer</button>`}
           <button class="ab" onclick="genReport('${id}')">📄 Service report</button>
-          <button class="ab abq" onclick="genQuote('${id}')">＋ New quote</button>
+          <button class="ab abq" onclick="chooseQuote('${id}',event)">＋ New quote</button>
           ${o.isR?'':`<button class="ab" onclick="chooseContract('${id}',event)">📃 AMC contract</button>`}
           ${o.isR?'':`<button class="ab" onclick="moveItem('${id}',event)">⏭ Move month</button>`}
           ${o.isR?'':`<button class="ab" onclick="openVisits('${id}')">🗓 Plan visits</button>`}
